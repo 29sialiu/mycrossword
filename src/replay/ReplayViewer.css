@@ -1,0 +1,340 @@
+/* ============================================================
+   ReplayViewer — layout, controls, and solving-order panel
+   ============================================================ */
+
+/* Root container */
+.rv {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: #222;
+}
+
+/* ── Load panel ────────────────────────────────────────────── */
+.rv__load-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.rv__load-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rv__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+}
+
+.rv__input {
+  padding: 6px 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 200px;
+}
+
+.rv__input:focus {
+  outline: 2px solid #1976d2;
+  border-color: transparent;
+}
+
+.rv__select {
+  padding: 6px 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.rv__error {
+  flex: 0 0 100%;
+  margin: 0;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.rv__loaded-badge {
+  flex: 0 0 100%;
+  margin: 0;
+  color: #2e7d32;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.rv__btn {
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.1s;
+}
+
+.rv__btn:hover:not(:disabled) {
+  background: #e3f2fd;
+  border-color: #1976d2;
+}
+
+.rv__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rv__btn--primary {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1565c0;
+  font-weight: 600;
+}
+
+.rv__btn--primary:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.rv__btn--play {
+  font-size: 18px;
+  width: 44px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rv__btn--speed {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.rv__btn--speed-active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1565c0;
+}
+
+/* ── Body: grid + panel side by side ──────────────────────── */
+.rv__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.rv__grid-wrap {
+  flex: 0 0 auto;
+}
+
+/* ── Controls bar ──────────────────────────────────────────── */
+.rv__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.rv__transport {
+  display: flex;
+  gap: 4px;
+}
+
+.rv__speed {
+  display: flex;
+  gap: 4px;
+  border-left: 1px solid #ddd;
+  padding-left: 12px;
+}
+
+.rv__scrubber-wrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+  border-left: 1px solid #ddd;
+  padding-left: 12px;
+}
+
+.rv__scrubber {
+  width: 100%;
+  cursor: pointer;
+  accent-color: #1976d2;
+}
+
+.rv__time-label {
+  font-size: 12px;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Solving-order panel
+   ============================================================ */
+
+.solving-panel {
+  flex: 1;
+  min-width: 320px;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.solving-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid #1976d2;
+  padding-bottom: 6px;
+}
+
+.solving-panel__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.solving-panel__stats {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Legend */
+.solving-panel__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.solving-panel__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #444;
+}
+
+.solving-panel__legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #999;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Table */
+.solving-panel__table-wrap {
+  overflow-y: auto;
+  max-height: 520px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.solving-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.solving-panel__table thead th {
+  position: sticky;
+  top: 0;
+  background: #f0f4ff;
+  padding: 7px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #ccc;
+  white-space: nowrap;
+}
+
+.solving-panel__table tbody tr {
+  border-bottom: 1px solid #eee;
+  transition: background 0.1s;
+}
+
+.solving-panel__table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.solving-panel__table td {
+  padding: 6px 10px;
+  vertical-align: middle;
+}
+
+/* Active row (cursor is on this clue right now) */
+.solving-panel__row--active {
+  background: #fff3e0 !important;
+  font-weight: 600;
+}
+
+/* Completed row */
+.solving-panel__row--done .solving-panel__clue-id {
+  color: #2e7d32;
+}
+
+.solving-panel__rank {
+  color: #999;
+  font-size: 12px;
+  width: 28px;
+  text-align: center;
+}
+
+.solving-panel__clue-id {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.solving-panel__time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #555;
+}
+
+.solving-panel__done-badge {
+  display: inline-block;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
+.solving-panel__fixes {
+  text-align: center;
+}
+
+.solving-panel__fixes-badge {
+  display: inline-block;
+  background: #fff8e1;
+  color: #f57f17;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-weight: 600;
+}
+
+.solving-panel__empty {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}

@@ -1,0 +1,89 @@
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  margin: 0;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+.Page__banner {
+  background-color: #24292f;
+  color: #fff;
+  min-height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.Page__mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.Page__mode-tab {
+  padding: 6px 16px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.1s, color 0.1s;
+}
+.Page__mode-tab:hover {
+  background: #333;
+  color: #fff;
+}
+.Page__mode-tab--active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1565c0;
+}
+.Page__main {
+  padding: 16px;
+  overflow: hidden;
+  min-height: 80vh;
+}
+.Page__controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+  min-height: 36px;
+}
+.Page__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.Page__control label {
+  font-size: 0.9rem;
+}
+.Page__alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e5f9f5;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+.Page__alertIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #00cc99;
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 1.2;
+}
