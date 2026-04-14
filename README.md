@@ -1,232 +1,161 @@
 # MyCrossword
 
-React crossword component built to work with Guardian crossword data.
+A research tool for running crossword-solving experiments. Participants solve NYT Mini crosswords in the browser while every interaction (cell focus, keypress, completion) is logged to Firebase. A built-in replay viewer lets you reconstruct and visualise any participant's solving session.
 
-![image](https://github.com/t-blackwell/mycrossword/assets/31444631/bb21604a-deee-4f15-9e66-050d972f9e63)
+---
 
-## Features
+## Project structure
 
-- Displays crossword grid and list of clues
-- Displays separators in the grid for hyphenated and multi-word solutions
-- Responsive to different screen sizes
-- Clue selection highlights relevant cells
-- Grouped clues span multiple columns or rows
-- Tab key cycles between clues
-- Arrow keys navigate between cells
-- Displays attempted clues as greyed out
-- Autosaves progress to local storage
-- Smart clearing only removes cells not part of other completed solutions
-- Check and reveal solution functions (provided `solutionsAvailable: true` )
-- Anagram helper
+```
+src/
+  App.tsx                  # Entry point — Play and Replay viewer tabs
+  puzzles/
+    puz/                   # Drop .puz files here
+    index.ts               # Auto-generated puzzle data (run convert-puzzles)
+  replay/                  # Replay viewer components and logic
+scripts/
+  convert-puz.ts           # .puz → TypeScript data converter
+lib/
+  components/              # MyCrossword React component library
+  firebase/
+    config.ts              # Firebase initialisation
+    tracking.ts            # Event logging (writes)
+    reader.ts              # Event fetching (reads)
+  hooks/
+    useFirebaseTracking/   # Connects MyCrossword callbacks to Firebase
+```
 
-## Install
+---
+
+## Setup
+
+**1. Install dependencies**
 
 ```sh
-npm install mycrossword
+npm install
 ```
 
-## Usage
+**2. Configure Firebase**
 
-```js
-import MyCrossword from 'mycrossword';
-import 'mycrossword/style.css';
+Copy `.env.example` to `.env` and fill in your Firebase project credentials:
 
-const data = {
-  /* ... crossword data (see below) ... */
-};
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
 
-export default function MyPage() {
-  return <MyCrossword id="crossword-1" data={data} />;
+**3. Set Firestore security rules**
+
+The replay viewer reads from Firestore, so your rules need to allow reads. In the Firebase console under **Firestore → Rules**:
+
+```
+match /participants/{participantId}/{document=**} {
+  allow read, write: if true; // tighten before any public deployment
 }
 ```
 
-## Props
+---
 
-| Property                | Description                                                                                                                                                                                                                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowedHtmlTags`       | `string[]` = ['b', 'strong', 'i', 'em', 'sub', 'sup']<br />Optional list of HTML tags allowed within the clues. Use `[]` to prevent all HTML tags. Defaults to `['b', 'strong', 'i', 'em', 'sub', 'sup']`.                                                                                              |
-| `allowMissingSolutions` | `boolean` = false<br />Optional flag to relax grid validation. This will allow the `data` prop to have missing or incomplete solutions in its entries.                                                                                                                                                  |
-| `cellMatcher`           | `RegExp` = '/[A-Z]/'<br />Optional regular expression to match against entered cell characters. Defaults to `/[A-Z]/`.                                                                                                                                                                                  |
-| `cellSize`              | `number` = 31<br />Optional size of each cell in the grid. Defaults to `31`.                                                                                                                                                                                                                            |
-| `className`             | `string`<br />Optional string to apply a space-delimited list of class names.                                                                                                                                                                                                                           |
-| `data`                  | `GuardianCrossword`<br />Required object that contains crossword clues, solutions and other information needed to draw the grid. See [crossword data](#crossword-data) below for more information.                                                                                                      |
-| `id`                    | `string`<br />Required string to uniquely identify the crossword.                                                                                                                                                                                                                                       |
-| `loadGrid`              | `GuessGrid \| undefined`<br />Optional object to override storage mechanism. Called when the component is initialized with the ID of the crossword. Should return an array-based representation of the crossword grid. See [guess grid](#guess-grid) below for more information.                        |
-| `onCellChange`          | `(cellChange: CellChange) => void \| undefined`<br />Optional function. Called after a grid cell has changed its guess. The object contains the properties `pos`, `guess` and `previousGuess`.                                                                                                          |
-| `onCellFocus`           | `(cellFocus: CellFocus) => void \| undefined`<br />Optional function. Called after the focus switches to a new cell. The object returned contains the properties `pos` and `clueId`.                                                                                                                    |
-| `onComplete`            | `() => void \| undefined`<br />Optional function. Called once after the grid has been successfully filled.                                                                                                                                                                                              |
-| `saveGrid`              | `(value: GuessGrid \| ((val: GuessGrid) => GuessGrid)) => void \| undefined`<br />Optional function to override storage mechanism. Called after the grid has changed with the ID of the crossword and array-based representation of the grid. See [guess grid](#guess-grid) below for more information. |
-| `stickyClue`            | `'always' \| 'never' \| 'auto'` = 'auto'<br />Optional value to define when to show the sticky clue above the grid. Defaults to `'auto'` (shown on `xs` and `sm` breakpoints).                                                                                                                          |
-| `theme`                 | `'red' \| 'pink' \| 'purple' \| 'deepPurple' \| 'indigo' \| 'blue' \| 'lightBlue' \| 'cyan' \| 'teal' \| 'green' \| 'deepOrange' \| 'blueGrey'` = 'blue'<br />Optional value to override the main colour applied to the highlighted cells and clues. Defaults to `'blue'`.                              |
+## Adding puzzles
 
-## Crossword data
+Puzzles are sourced as `.puz` files (Across Lite format) from tools such as [xwords.app](https://q726kbxun.github.io/xwords/xwords.html).
 
-This is an example of the JSON data required to create the crossword shown above. Its structure is defined by the [GuardianCrossword](./GuardianCrossword.md) interface.
-
+**1.** Download `.puz` files and name them by date:
 ```
-{
-  id: 'simple/1',
-  number: 1,
-  name: 'Simple Crossword #1',
-  date: 1542326400000,
-  entries: [
-    {
-      id: '1-across',
-      number: 1,
-      humanNumber: '1',
-      clue: 'Toy on a string (2-2)',
-      direction: 'across',
-      length: 4,
-      group: ['1-across'],
-      position: { x: 0, y: 0 },
-      separatorLocations: {
-        '-': [2],
-      },
-      solution: 'YOYO',
-    },
-    {
-      id: '4-across',
-      number: 4,
-      humanNumber: '4',
-      clue: 'Have a rest (3,4)',
-      direction: 'across',
-      length: 7,
-      group: ['4-across'],
-      position: { x: 0, y: 2 },
-      separatorLocations: {
-        ',': [3],
-      },
-      solution: 'LIEDOWN',
-    },
-    {
-      id: '1-down',
-      number: 1,
-      humanNumber: '1',
-      clue: 'Colour (6)',
-      direction: 'down',
-      length: 6,
-      group: ['1-down'],
-      position: { x: 0, y: 0 },
-      separatorLocations: {},
-      solution: 'YELLOW',
-    },
-    {
-      id: '2-down',
-      number: 2,
-      humanNumber: '2',
-      clue: 'Bits and bobs (4,3,4)',
-      direction: 'down',
-      length: 7,
-      group: ['2-down', '3-down'],
-      position: { x: 3, y: 0 },
-      separatorLocations: {
-        ',': [4, 7],
-      },
-      solution: 'ODDSAND',
-    },
-    {
-      id: '3-down',
-      number: 3,
-      humanNumber: '3',
-      clue: 'See 2',
-      direction: 'down',
-      length: 4,
-      group: ['2-down', '3-down'],
-      position: {
-        x: 6,
-        y: 1,
-      },
-      separatorLocations: {},
-      solution: 'ENDS',
-    },
-  ],
-  solutionAvailable: true,
-  dateSolutionAvailable: 1542326400000,
-  dimensions: {
-    cols: 13,
-    rows: 13,
-  },
-  crosswordType: 'quick',
-};
+2024-10-31-mini.puz
+2024-11-01-mini.puz
 ```
 
-## Guess grid
+**2.** Place them in `src/puzzles/puz/`
 
-Some functions require or return the state of the crossword grid. This is a 2-dimensional array holding the user's guess for each cell. Incomplete cells or cells that are not part of any answer are represented as the empty string (`""`). Note that it follows the convention of indexing by column first (x) and then row (y) so the printed array is transposed compared to how the crossword grid appears. For example, the following crossword...
-
-<table>
-  <tr>
-    <td>■</td>
-    <td>D</td>
-    <td>■</td>
-  </tr>
-  <tr>
-    <td>■</td>
-    <td>O</td>
-    <td>■</td>
-  </tr>
-  <tr>
-    <td>A</td>
-    <td>G</td>
-    <td>E</td>
-  </tr>
-</table>
-
-...would be represented as...
-
-```JSON
-{
-  "value": [
-    ["",  "",  "A"],
-    ["D", "O", "G"],
-    ["",  "",  "E"]
-  ]
-}
+**3.** Run the converter:
+```sh
+npm run convert-puzzles
 ```
 
-## What's new?
+This parses each `.puz` file and regenerates `src/puzzles/index.ts` with the crossword data. The puzzle list in both the Play tab and the Replay viewer updates automatically.
 
-While the project has been created from scratch, it should be considered as a continuation of [@guardian](https://github.com/guardian)/[react-crossword](https://github.com/guardian/react-crossword). With that in mind, here's a list of improvements when compared to the original:
+---
 
-### Technical improvements
+## Running the experiment
 
-- Use of TypeScript
-- Built with Vite
-- Switched to functional components
-- Better performance (memoization, useCallback etc.)
-- Simplified global state management using Zustand
-- More modular component hierarchy
-- Scoped CSS
-- Full unit test coverage
-- CI using GitHub actions
+```sh
+npm run dev
+```
 
-### Functional improvements
+The app opens at `localhost:5173` with two tabs:
 
-- Theme styles
-- Combined buttons to use dropdown menus
-- Check/Reveal letter
-- Arrow keys can skip over dark cells
-- Backspace key moves backwards without the cell having to be empty
-- Anagram helper
-  - Click clue words to add to anagram
-  - Added letter to centre of word wheel
-  - Character counter
-  - Escape key to clear/close
-  - Show missing letters from grid
-- Removed hidden input and implicitly fixed the window resize bug
-- Fixed HTML display in StickyClue and AnagramHelper
-- Better loading and error state display
+### Play tab
 
-## Working with this project
+Participants solve crosswords here. Every interaction is logged to Firestore under:
 
-`npm i` to install dependencies
+```
+participants/{participantId}/
+  puzzles/{puzzleId}/
+    events/{timestamp_random}   ← one document per event
+```
 
-`npm run test` to run unit tests
+Each event document contains:
 
-`npm run build` to package for publishing
+| Field | Description |
+|---|---|
+| `event_type` | `'cell_focus'` or `'keypress'` |
+| `timestamp` | Unix ms |
+| `cell` | `{ row, col }` |
+| `clue_id` | Active clue ID |
+| `key` | *(keypress only)* Character typed, or `'Backspace'` |
+| `previous_value` | *(keypress only)* Cell contents before the keypress |
+| `new_value` | *(keypress only)* Cell contents after the keypress |
 
-`npm run dev` to run the example application
+The participant ID and condition are set in `src/App.tsx`:
 
-## Licence
+```ts
+const PARTICIPANT_ID = 'participant_123';
+```
 
-[MIT](./LICENSE), © 2021 [Tom Blackwell](https://github.com/t-blackwell)
+### Replay viewer tab
+
+Load any recorded session by entering a participant ID and selecting a puzzle, then use the playback controls to step through the session.
+
+**Grid colours**
+
+| Colour | Meaning |
+|---|---|
+| Red | Cell currently focused |
+| Amber | Cell that was overwritten at least once |
+| Green | All cells in this clue are filled |
+| Blue | Cell has a letter, clue not yet complete |
+| White | Empty |
+
+**Solving order panel**
+
+Shows clues ranked by when the participant first typed in them, with first-attempt time, completion time, and correction count — all relative to the start of the session.
+
+**Playback controls**
+
+Step back/forward one event at a time, or play continuously at 0.5×–10× real-time speed. The scrubber lets you jump to any point in the session.
+
+---
+
+## Development scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run convert-puzzles` | Convert `.puz` files to TypeScript data |
+| `npm run build` | Build the component library |
+| `npm run test` | Run unit tests |
+| `npm run typecheck` | Type-check without building |
+
+---
+
+## Tech stack
+
+- **React 18** + **TypeScript**
+- **Vite** — dev server and build tool
+- **Zustand** — crossword grid state
+- **Firebase / Firestore** — event storage and retrieval

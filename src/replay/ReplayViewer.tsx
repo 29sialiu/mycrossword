@@ -6,32 +6,8 @@ import { useReplayEngine } from './useReplayEngine';
 import { ReplayGrid } from './ReplayGrid';
 import { SolvingOrderPanel } from './SolvingOrderPanel';
 import { formatDuration } from './replayUtils';
+import { puzzles } from '../puzzles';
 import './ReplayViewer.css';
-
-// The crosswords available in the app — must match the IDs used during recording
-const KNOWN_CROSSWORDS: Array<{
-  id: string;
-  name: string;
-  getData: () => Promise<GuardianCrossword>;
-}> = [
-  {
-    id: '28505',
-    name: 'Guardian Cryptic 28,505',
-    getData: () =>
-      import('../examples/guardian.cryptic.28505').then((m) => m.default),
-  },
-  {
-    id: '25220',
-    name: 'Guardian Prize 25,220',
-    getData: () =>
-      import('../examples/guardian.prize.25220').then((m) => m.default),
-  },
-  {
-    id: 'mini',
-    name: 'Mini crossword No 1',
-    getData: () => import('../examples/mini').then((m) => m.default),
-  },
-];
 
 const SPEED_OPTIONS = [0.5, 1, 2, 5, 10] as const;
 
@@ -42,7 +18,7 @@ const SPEED_OPTIONS = [0.5, 1, 2, 5, 10] as const;
 export function ReplayViewer() {
   const [participantId, setParticipantId] = useState('');
   const [selectedCrosswordId, setSelectedCrosswordId] = useState(
-    KNOWN_CROSSWORDS[0].id,
+    puzzles.length > 0 ? puzzles[0].id : '',
   );
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [crosswordData, setCrosswordData] = useState<GuardianCrossword | null>(
@@ -66,16 +42,18 @@ export function ReplayViewer() {
     setCrosswordData(null);
 
     try {
-      const crosswordDef = KNOWN_CROSSWORDS.find(
-        (c) => c.id === selectedCrosswordId,
-      )!;
+      const puzzleDef = puzzles.find((p) => p.id === selectedCrosswordId);
+      if (!puzzleDef) {
+        setError('Selected puzzle not found.');
+        setLoading(false);
+        return;
+      }
 
-      const [eventsResult, puzzleDataResult, crosswordDataResult] =
-        await Promise.all([
-          getPuzzleEvents(pid, selectedCrosswordId),
-          getPuzzleData(pid, selectedCrosswordId),
-          crosswordDef.getData(),
-        ]);
+      const [eventsResult, puzzleDataResult] = await Promise.all([
+        getPuzzleEvents(pid, selectedCrosswordId),
+        getPuzzleData(pid, selectedCrosswordId),
+      ]);
+      const crosswordDataResult = puzzleDef.data;
 
       if (eventsResult.length === 0) {
         setError(
@@ -89,7 +67,7 @@ export function ReplayViewer() {
       setEvents(eventsResult);
       setCrosswordData(crosswordDataResult);
       setPuzzleName(
-        puzzleDataResult?.puzzle_metadata.puzzle_name ?? crosswordDef.name,
+        puzzleDataResult?.puzzle_metadata.puzzle_name ?? puzzleDef.name,
       );
     } catch (err) {
       setError(
@@ -143,11 +121,15 @@ export function ReplayViewer() {
             value={selectedCrosswordId}
             onChange={(e) => setSelectedCrosswordId(e.target.value)}
           >
-            {KNOWN_CROSSWORDS.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {puzzles.length === 0 ? (
+              <option value="">No puzzles loaded</option>
+            ) : (
+              puzzles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
         <button

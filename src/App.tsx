@@ -1,16 +1,12 @@
 import { MyCrossword } from '../dist/main';
 import { useFirebaseTracking } from '../lib/hooks/useFirebaseTracking/useFirebaseTracking';
 import '../dist/style.css';
-import data28505 from './examples/guardian.cryptic.28505';
-import data25220 from './examples/guardian.prize.25220';
-import dataMini from './examples/mini';
 import { useState } from 'react';
 import './App.css';
 import { ReplayViewer } from './replay/ReplayViewer';
+import { puzzles } from './puzzles';
 
 type AppMode = 'play' | 'replay';
-
-const ALLOWED_HTML_TAGS = ['b', 'strong', 'i', 'em', 'sub', 'sup'];
 
 const THEME_OPTIONS = [
   'red',
@@ -27,26 +23,6 @@ const THEME_OPTIONS = [
   'blueGrey',
 ] as const;
 
-const crosswords = [
-  {
-    id: '28505',
-    name: 'Guardian Cryptic 28,505',
-    data: data28505,
-  },
-  {
-    id: '25220',
-    name: 'Guardian Prize 25,220',
-    data: data25220,
-  },
-  {
-    id: 'mini',
-    name: 'Mini crossword No 1',
-    data: dataMini,
-  },
-] as const;
-
-type CrosswordId = (typeof crosswords)[number]['id'];
-
 type Theme = (typeof THEME_OPTIONS)[number];
 
 // In a real experiment these would come from Empirica or a login step.
@@ -55,57 +31,65 @@ const PARTICIPANT_ID = 'participant_123';
 // Extracted so that useFirebaseTracking only mounts when actually playing
 function PlayMode() {
   const [theme, setTheme] = useState<Theme>('blue');
-  const [showDefinitions, setShowDefinitions] = useState(false);
   const [complete, setComplete] = useState(false);
-  const [selectedCrosswordId, setSelectedCrosswordId] =
-    useState<CrosswordId>('28505');
+  const [selectedId, setSelectedId] = useState(
+    puzzles.length > 0 ? puzzles[0].id : '',
+  );
+
+  const selectedPuzzle = puzzles.find((p) => p.id === selectedId);
 
   const { onCellFocus, onCellChange, onComplete: firebaseOnComplete } =
     useFirebaseTracking({
       participantId: PARTICIPANT_ID,
-      puzzleId: selectedCrosswordId,
-      participantMetadata: { condition: 'A' },
-      puzzleMetadata: { puzzle_name: crosswords.find(c => c.id === selectedCrosswordId)?.name },
+      puzzleId: selectedId,
+      puzzleMetadata: { puzzle_name: selectedPuzzle?.name },
     });
 
-  const selectedCrossword = crosswords.find(
-    (crossword) => crossword.id === selectedCrosswordId,
-  );
-
-  if (selectedCrossword === undefined) {
-    throw new Error(`Crossword with id ${selectedCrosswordId} not found.`);
-  }
-
-  const handleCrosswordChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const crosswordId = event.target.value as CrosswordId;
-    setSelectedCrosswordId(crosswordId);
+  const handlePuzzleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedId(e.target.value);
     setComplete(false);
   };
+
+  if (puzzles.length === 0) {
+    return (
+      <main className="Page__main">
+        <p style={{ color: '#666', padding: 16 }}>
+          No puzzles loaded yet. Add <code>.puz</code> files to{' '}
+          <code>src/puzzles/puz/</code> and run{' '}
+          <code>npm run convert-puzzles</code>.
+        </p>
+      </main>
+    );
+  }
+
+  if (!selectedPuzzle) {
+    return null;
+  }
 
   return (
     <main className="Page__main">
       <div className="Page__controls">
-        <div className="Page__control">
-          <label htmlFor="crossword-selector">Crossword</label>
-          <select
-            id="crossword-selector"
-            onChange={handleCrosswordChange}
-            value={selectedCrosswordId}
-          >
-            {crosswords.map((crossword) => (
-              <option key={crossword.id} value={crossword.id}>
-                {crossword.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {puzzles.length > 1 && (
+          <div className="Page__control">
+            <label htmlFor="puzzle-selector">Puzzle</label>
+            <select
+              id="puzzle-selector"
+              onChange={handlePuzzleChange}
+              value={selectedId}
+            >
+              {puzzles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="Page__control">
           <label htmlFor="theme-selector">Theme</label>
           <select
             id="theme-selector"
-            onChange={(event) => setTheme(event.target.value as Theme)}
+            onChange={(e) => setTheme(e.target.value as Theme)}
             value={theme}
           >
             {THEME_OPTIONS.map((option) => (
@@ -115,31 +99,19 @@ function PlayMode() {
             ))}
           </select>
         </div>
-        <div className="Page__control">
-          <label htmlFor="def-selector">Show definitions</label>
-          <input
-            checked={showDefinitions}
-            id="def-selector"
-            onChange={(event) => setShowDefinitions(event.target.checked)}
-            type="checkbox"
-          />
-        </div>
-        {complete ? (
+        {complete && (
           <div className="Page__alert">
             <div className="Page__alertIcon">
               <span>✔</span>
             </div>
             <span>Complete</span>
           </div>
-        ) : null}
+        )}
       </div>
       <MyCrossword
-        allowedHtmlTags={
-          showDefinitions ? ['u', ...ALLOWED_HTML_TAGS] : ALLOWED_HTML_TAGS
-        }
-        cellSize={selectedCrosswordId === 'mini' ? 50 : 31}
-        id={`example.${selectedCrosswordId}`}
-        data={selectedCrossword.data}
+        cellSize={50}
+        id={`nyt-mini.${selectedId}`}
+        data={selectedPuzzle.data}
         onCellFocus={onCellFocus}
         onCellChange={onCellChange}
         onComplete={() => {

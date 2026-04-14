@@ -37,7 +37,8 @@
     "build": "tsc --p ./tsconfig-build.json && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "jest --config jest.config.ts",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "convert-puzzles": "npx tsx scripts/convert-puz.ts"
   },
   "peerDependencies": {
     "react": "^18.3.1",

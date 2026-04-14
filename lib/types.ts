@@ -32,7 +32,8 @@ export type GuardianCrossword = {
     | 'quiptic'
     | 'speedy'
     | 'prize'
-    | 'everyman';
+    | 'everyman'
+    | 'nyt-mini';
   date: number;
   dateSolutionAvailable?: number;
   dimensions: {
